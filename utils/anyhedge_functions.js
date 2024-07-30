@@ -1,21 +1,24 @@
 import { AnyHedgeManager } from '@generalprotocols/anyhedge';
-import { get_active_contract_ads } from './load_contracts_from_csv.js'
 import { encodeExtendedJson, encodeExtendedJsonObject } from './encoder.js'
 
-const config =
-{
-    authenticationToken: process.env.AUTHENTICATION_TOKEN,
-    serviceDomain: 'api.anyhedge.com',
-    servicePort: 443,
-    serviceScheme: 'https'
-};
-const private_key = process.env.PRIVATE_KEY
 
-const anyHedgeManager = new AnyHedgeManager(config);
+function create_manager(authentication_token) {
+    const config =
+    {
+        authenticationToken: authentication_token,
+        serviceDomain: 'api.anyhedge.com',
+        servicePort: 443,
+        serviceScheme: 'https'
+    };
 
+    const anyHedgeManager = new AnyHedgeManager(config);
 
-const get_status = async function (contract_address) {
-    const contractData = await anyHedgeManager.getContractStatus(contract_address, private_key);
+    return anyHedgeManager
+
+}
+
+const get_status = async function (contract_address, manager, private_key) {
+    const contractData = await manager.getContractStatus(contract_address, private_key);
 
     // Output the contract status to the console
     // console.log('contract data:');
@@ -33,9 +36,8 @@ const get_status = async function (contract_address) {
 };
 
 
-async function get_info_for_contract_addresses() {
-    let path_file = process.env.FILE_PATH
-    let contracts_ls = get_active_contract_ads(path_file)
+async function get_info_for_contract_addresses(a_token, p_key, contracts_ls) {
+    const manager = create_manager(a_token)
 
     let i = 0;
 
@@ -45,7 +47,7 @@ async function get_info_for_contract_addresses() {
         let cont_address = contracts_ls[i]
         try {
             console.log("Estatus for contract:", cont_address)
-            let data = await get_status(cont_address)
+            let data = await get_status(cont_address, manager, p_key)
 
             // console.log(data['fundings'][0]['settlement'])
             // ## Just keep the contracts without settlement
@@ -66,11 +68,13 @@ async function get_info_for_contract_addresses() {
 }
 
 
-const signMutualRedemption = async function (contractAddress, settlementPrice, privateKeyWIF = private_key) {
+const signMutualRedemption = async function (authentication_token, privateKeyWIF, contractAddress, settlementPrice) {
+
+    const manager = create_manager(authentication_token)
     try {
 
         // Retrieve contract data for the contract address.
-        const contractData = await anyHedgeManager.getContractStatus(contractAddress, privateKeyWIF);
+        const contractData = await manager.getContractStatus(contractAddress, privateKeyWIF);
 
         // Extract the parameters and metadata for legibility.
         const { parameters: contractParameters } = contractData;
@@ -88,13 +92,12 @@ const signMutualRedemption = async function (contractAddress, settlementPrice, p
         let proposal;
 
         if (typeof settlementPrice !== 'undefined') {
-            console.log("here")
             // Perform a mutual early maturation if a settlement price was provided.
-            proposal = await anyHedgeManager.signMutualEarlyMaturation({ privateKeyWIF, contractFunding, settlementPrice, contractParameters, contractMetadata });
+            proposal = await manager.signMutualEarlyMaturation({ privateKeyWIF, contractFunding, settlementPrice, contractParameters, contractMetadata });
         }
         else {
             // Perform a refund if no settlement price was provided.
-            proposal = await anyHedgeManager.signMutualRefund({ privateKeyWIF, contractFunding, contractParameters, contractMetadata });
+            proposal = await manager.signMutualRefund({ privateKeyWIF, contractFunding, contractParameters, contractMetadata });
             // console.log(proposal)
         }
 
@@ -109,13 +112,14 @@ const signMutualRedemption = async function (contractAddress, settlementPrice, p
 };
 
 
-const completeMutualRedemption = async function (contractAddress, proposal1, proposal2, privateKeyWIF = private_key) {
+const completeMutualRedemption = async function (authentication_token, privateKeyWIF, contractAddress, proposal1, proposal2) {
+    const manager = create_manager(authentication_token)
     try {
         // Retrieve contract data for the contract address.
-        const contractData = await anyHedgeManager.getContractStatus(contractAddress, privateKeyWIF);
+        const contractData = await manager.getContractStatus(contractAddress, privateKeyWIF);
 
         // Complete mutual redemption.
-        const transactionId = await anyHedgeManager.completeMutualRedemption(proposal1, proposal2, contractData.parameters);
+        const transactionId = await manager.completeMutualRedemption(proposal1, proposal2, contractData.parameters);
 
         // Log the results to the console.
         console.log('Successfully completed mutual redemption with this transaction:');

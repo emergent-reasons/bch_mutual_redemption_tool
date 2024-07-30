@@ -5,27 +5,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settle BCH contracts</title>
+    <title>Welcome</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="/encoder" async></script>
     <script src="/idx_script"></script>
-
 </head>
 
 <body>
-    <h2>Active BCH contracts </h2>
-    <div class="container_m hidden" id="section0">
-        <p>You don't have active contracts. </p>
+    <div class="top-bar">BCH Bull utility </div>
+    <div class="container_m">
+        <button class=" button-black-border" id="section0" onclick="goP2Ppage()">
+            <h2>Generate P2P contract </h2>
+        </button>
+        <button class=" button-black-border" id="section1" onclick="goActiveCont()">
+            <h2>See active contracts </h2>
+        </button>
     </div>
-    <div class="container_m hidden" id="section1">
-        <h2>Earlier settlement enabled: </h2>
-        <p>You can generate proposals for these contracts </p>
-        <div id="contracts" class="main-container"></div>
-    </div>
-    <div class="container_m hidden" id="section2">
-        <h2>No earlier settlement enabled: </h2>
-        <div id="no_settlement_contracts" class="main-container"></div>
-    </div>
+
+
 </body>
 
 </html>
